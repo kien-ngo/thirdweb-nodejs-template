@@ -1,0 +1,53 @@
+{
+  "name": "nodejs-service-template",
+  "version": "0.0.13",
+  "type": "module",
+  "module": "src/index.ts",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "infra": "docker compose up -d",
+    "dev": "pnpm env:decrypt && NODE_ENV=development tsx --watch ./src/index.ts",
+    "build": "rm -rf ./dist && pnpm tsc",
+    "start": "node ./dist/index.js",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "lint": "biome lint ./src/*",
+    "format": "biome format --write ./src/*",
+    "fix": "biome check --write ./src/*",
+    "test": "vitest --coverage",
+    "test:watch": "vitest --watch",
+    "env:encrypt": "pnpm --silent senv encrypt .env > .env.encrypted",
+    "env:decrypt": "pnpm --silent senv decrypt .env.encrypted > .env"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.8.3",
+    "@electric-sql/pglite": "^0.2.1",
+    "@types/node": "^20.12.14",
+    "@types/pg": "^8.11.6",
+    "@vitest/coverage-v8": "^2.0.5",
+    "ioredis-mock": "^8.9.0",
+    "senv": "^1.0.2",
+    "tsx": "^4.17.0",
+    "typescript": "^5.5.3",
+    "vitest": "^2.0.5"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.12.0",
+    "@hono/zod-openapi": "^0.16.0",
+    "@hono/zod-validator": "^0.2.2",
+    "dd-trace": "^5.20.0",
+    "dotenv": "^16.4.5",
+    "drizzle-kit": "^0.24.0",
+    "drizzle-orm": "^0.33.0",
+    "drizzle-zod": "^0.5.1",
+    "hono": "^4.5.0",
+    "ioredis": "^5.4.1",
+    "papaparse": "^5.4.1",
+    "pg": "^8.12.0",
+    "thirdweb": "^5.64.2",
+    "winston": "^3.13.1",
+    "zod": "^3.23.8"
+  }
+}

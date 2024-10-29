@@ -1,0 +1,15 @@
+node_modules
+npm-debug.log
+.prettierignore
+.prettierrc.yml
+babel.config.js
+commitlint.config.js
+jest.config.ts
+.eslintrc.yml
+.husky
+.github
+.vscode
+test.resource
+.git
+coverage
+.env*

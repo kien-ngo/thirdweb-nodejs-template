@@ -1,0 +1,58 @@
+name: Push to Production
+
+on:
+  workflow_dispatch:
+
+jobs:
+  push_changes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: "main"
+          fetch-depth: 0
+
+      - name: Push to production
+        env:
+          PRIVATE_KEY: ${{ secrets.THIRDWEB_BOT_PRIVATE_KEY }}
+          APP_ID: 894214
+        run: |
+          # Install the necessary tooling, if not available
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+          # Prepare the private key
+          echo "$PRIVATE_KEY" | sed 's/\\n/\n/g' > app-private.pem
+
+          # Define JWT Header and Payload
+          HEADER='{"alg":"RS256","typ":"JWT"}'
+          PAYLOAD='{"iat":'$((`date +%s`))',"exp":'$((`date +%s` + 600))',"iss":"'$APP_ID'"}'
+
+          # Base64 URL Encode the Header and Payload
+          BASE64_HEADER=$(echo -n $HEADER | openssl base64 -e -A | tr '+/' '-_' | tr -d '=')
+          BASE64_PAYLOAD=$(echo -n $PAYLOAD | openssl base64 -e -A | tr '+/' '-_' | tr -d '=')
+
+          # Create the Signature
+          SIGNATURE=$(echo -n "$BASE64_HEADER.$BASE64_PAYLOAD" | openssl dgst -sha256 -sign app-private.pem | openssl base64 -e -A | tr '+/' '-_' | tr -d '=')
+
+          # Construct the JWT
+          JWT="$BASE64_HEADER.$BASE64_PAYLOAD.$SIGNATURE"
+
+          # Use JWT for further steps or API calls
+
+          # Print installations to the log for debugging
+          echo "Fetching installation ID..."
+          INSTALLATIONS=$(curl -sSL -H "Authorization: Bearer $JWT" -H "Accept: application/vnd.github.v3+json" https://api.github.com/app/installations)
+          echo $INSTALLATIONS | jq .
+
+          INSTALLATION_ID=$(echo $INSTALLATIONS | jq -r '.[0].id // .id')
+          echo "Using Installation ID: $INSTALLATION_ID"
+
+          ACCESS_TOKEN=$(curl -sSL -X POST -H "Authorization: Bearer $JWT" -H "Accept: application/vnd.github.v3+json" https://api.github.com/app/installations/$INSTALLATION_ID/access_tokens | jq -r '.token')
+
+          # Force push from main to production
+          git config --global user.name "thirdweb bot"
+          git config --global user.email "thirdweb-bot@thirdweb.com"
+          git push https://x-access-token:$ACCESS_TOKEN@github.com/${{ github.repository }} main:production --force
